@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Fitness App</title>
+
+<link rel="manifest" href="manifest.json">
+
+<link rel="stylesheet" href="style.css">
+
+<meta name="theme-color" content="#1976d2">
+
+</head>
+
+
+<body>
+
+
+<header class="topbar">
+
+    <div class="header-left">
+
+        <img src="icons/icon-192.png"
+             alt="Fitness App"
+             class="header-logo">
+
+        <div>
+
+            <h1>Fitness App</h1>
+
+            <p id="today"></p>
+
+        </div>
+
+    </div>
+
+    <button id="themeBtn">🌙</button>
+
+</header>
+
+
+
+<main>
+
+
+<section class="dashboard card">
+
+<h2>Heute</h2>
+
+
+<div class="progress">
+
+<div id="progressBar"></div>
+
+</div>
+
+
+<p id="progressText">
+0 % erledigt
+</p>
+
+
+
+<div class="stats">
+
+
+<div class="stat">
+
+<span id="exerciseCount">
+0
+</span>
+
+<small>
+Übungen
+</small>
+
+</div>
+
+
+<div class="stat">
+
+<span id="doneCount">
+0
+</span>
+
+<small>
+Erledigt
+</small>
+
+</div>
+
+
+<div class="stat">
+
+<span id="streak">
+0
+</span>
+
+<small>
+🔥 Streak
+</small>
+
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+<section class="card">
+
+
+<div class="sectionHeader">
+
+
+<h2>
+Mein Training
+</h2>
+
+
+<button id="newExerciseBtn">
+
+➕ Neue Übung
+
+</button>
+
+
+</div>
+
+
+
+<div id="exerciseList">
+
+</div>
+
+
+
+</section>
+
+
+</main>
+
+
+
+
+<div id="exerciseModal" class="modal hidden">
+
+
+<div class="modalContent">
+
+
+<h2 id="modalTitle">
+Neue Übung
+</h2>
+
+
+
+<input id="name" placeholder="Name">
+
+
+<textarea id="description"
+placeholder="Beschreibung"></textarea>
+
+
+
+<select id="category">
+
+<option>Brust</option>
+<option>Rücken</option>
+<option>Beine</option>
+<option>Bauch</option>
+<option>Schultern</option>
+<option>Arme</option>
+<option>Cardio</option>
+<option>Dehnen</option>
+<option>Eigene Übungen</option>
+
+</select>
+
+
+
+<input id="sets" type="number" placeholder="Sätze">
+
+<input id="reps" type="number" placeholder="Wiederholungen">
+
+<input id="weight" type="number" placeholder="Gewicht">
+
+<input id="time" type="number" placeholder="Zeit Sekunden">
+
+<input id="rest" type="number" placeholder="Pause Sekunden">
+
+
+<label>
+Bild auswählen
+</label>
+
+
+<input id="image" type="file" accept="image/*">
+
+
+
+<div class="buttons">
+
+
+<button id="saveExercise">
+
+💾 Speichern
+
+</button>
+
+
+<button id="closeModal">
+
+Abbrechen
+
+</button>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+<script src="app.js"></script>
+
+
+</body>
+
+</html>
