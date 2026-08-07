@@ -1,7 +1,7 @@
 {
-  "id": "/FitnessApp/",
-  "name": "Fitness App",
-  "short_name": "Fitness",
+  "id": "/",
+  "name": "Fitness App V3",
+  "short_name": "Fitness V3",
   "description": "Meine persönliche Fitness-App",
   "start_url": "/FittnessApp/",
   "scope": "/FittnessApp/",
