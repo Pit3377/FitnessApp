@@ -13,7 +13,8 @@ const FILES_TO_CACHE = [
     "./app.js",
     "./manifest.json",
     "./images/placeholder.png"
-
+    "./icons/icon-192.png",
+    "./icons/icon-512.png",
 ];
 
 // ------------------------------------------------------
