@@ -178,7 +178,7 @@ main{
 
     margin-bottom:15px;
 
-    color:white;
+    color:rgba(47, 45, 45, 0.61);
 
 }
 
@@ -217,7 +217,7 @@ main{
 
     height:18px;
 
-    background:#d9d9d9;
+    background:rgba(47, 45, 45, 0.61);
 
     border-radius:30px;
 
@@ -245,7 +245,7 @@ main{
 
     font-weight:bold;
 
-    color:rgba(47, 45, 45, 0.61)
+    color:rgba(47, 45, 45, 0.61);
 
     margin-bottom:20px;
 
@@ -283,13 +283,13 @@ main{
 
     font-weight:bold;
 
-    color:white;
+    color:rgba(47, 45, 45, 0.61);
 
 }
 
 .stat small{
 
-    color:white;
+    color:rgba(47, 45, 45, 0.61);
 
     font-size:14px;
 
@@ -421,7 +421,7 @@ button:active{
 
     background:rgba(255,255,255,.25);
 
-    color:white;
+    color:rgba(47, 45, 45, 0.61);
 
     padding:5px 12px;
 
