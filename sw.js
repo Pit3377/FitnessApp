@@ -3,7 +3,7 @@
 // Version 1.0
 // ======================================================
 
-const CACHE_NAME = "fitness-app-v1";
+const CACHE_NAME = "fitness-app-v2";
 
 const FILES_TO_CACHE = [
 
