@@ -514,6 +514,10 @@ function checkNewDay() {
     // Neuer Tag
     if (lastDate !== today) {
 
+        // Statistik des vergangenen Tages speichern
+        saveDailyStatistic(lastDate);
+
+        // Alle Übungen wieder auf "offen"
         exercises.forEach(
             exercise => {
 
@@ -523,11 +527,204 @@ function checkNewDay() {
 
         saveExercises();
 
+        // Neues Datum speichern
         localStorage.setItem(
             DATE_KEY,
             today
         );
     }
+}
+
+// ======================================================
+// Trainingsstatistik
+// ======================================================
+
+function loadStatistics() {
+
+    try {
+
+        const data =
+            localStorage.getItem(STATS_KEY);
+
+        if (!data) {
+            return {};
+        }
+
+        const statistics =
+            JSON.parse(data);
+
+        if (
+            typeof statistics !== "object" ||
+            statistics === null ||
+            Array.isArray(statistics)
+        ) {
+            return {};
+        }
+
+        return statistics;
+
+    } catch (error) {
+
+        console.error(
+            "Fehler beim Laden der Statistik:",
+            error
+        );
+
+        return {};
+    }
+}
+
+
+// ======================================================
+// Tageswert speichern
+// ======================================================
+
+function saveDailyStatistic(date) {
+
+    const total =
+        exercises.length;
+
+    const done =
+        exercises.filter(
+            exercise => exercise.done
+        ).length;
+
+    const percent =
+        total === 0
+            ? 0
+            : Math.round(
+                done / total * 100
+            );
+
+    const statistics =
+        loadStatistics();
+
+    statistics[date] =
+        percent;
+
+    // Nur die letzten 7 Tage behalten
+    const dates =
+        Object.keys(statistics)
+            .sort()
+            .slice(-7);
+
+    const cleanedStatistics = {};
+
+    dates.forEach(
+        dateKey => {
+
+            cleanedStatistics[dateKey] =
+                statistics[dateKey];
+        }
+    );
+
+    localStorage.setItem(
+        STATS_KEY,
+        JSON.stringify(
+            cleanedStatistics
+        )
+    );
+}
+
+
+// ======================================================
+// Statistik anzeigen
+// ======================================================
+
+function renderStatistics() {
+
+    const container =
+        document.getElementById(
+            "trainingStatistics"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const statistics =
+        loadStatistics();
+
+    const today =
+        new Date();
+
+    const dayNames = [
+        "So",
+        "Mo",
+        "Di",
+        "Mi",
+        "Do",
+        "Fr",
+        "Sa"
+    ];
+
+    let html = "";
+
+    // Montag bis Sonntag
+    const currentDay =
+        today.getDay();
+
+    const mondayOffset =
+        currentDay === 0
+            ? -6
+            : 1 - currentDay;
+
+    for (
+        let i = 0;
+        i < 7;
+        i++
+    ) {
+
+        const date =
+            new Date(today);
+
+        date.setDate(
+            today.getDate() +
+            mondayOffset +
+            i
+        );
+
+        const dateKey =
+            date.toISOString()
+                .split("T")[0];
+
+        const dayName =
+            dayNames[
+                date.getDay()
+            ];
+
+        const percent =
+            statistics[dateKey] !== undefined
+                ? statistics[dateKey]
+                : 0;
+
+        html += `
+
+            <div class="statistic-row">
+
+                <div class="statistic-day">
+                    ${dayName}
+                </div>
+
+                <div class="statistic-bar-container">
+
+                    <div
+                        class="statistic-bar"
+                        style="width:${percent}%">
+                    </div>
+
+                </div>
+
+                <div class="statistic-percent">
+                    ${percent} %
+                </div>
+
+            </div>
+
+        `;
+    }
+
+    container.innerHTML = html;
 }
 
 // ======================================================
@@ -979,6 +1176,8 @@ async function finishSave() {
 
     await renderExercises();
 
+    renderStatistics();
+
     closeModal();
 }
 
@@ -1036,7 +1235,17 @@ async function toggleDone(index) {
 
     saveExercises();
 
+    // Statistik des aktuellen Tages
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+    saveDailyStatistic(today);
+
     await renderExercises();
+
+    renderStatistics();
 }
 
 // ======================================================
