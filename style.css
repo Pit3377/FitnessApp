@@ -787,7 +787,7 @@ button:hover{
 
 .statistic-bar {
     height: 100%;
-    width: 0%;
+    width: var(--stat-width, 0%);
     background: #2e7d32;
     border-radius: 20px;
     transition: width 0.4s ease;
