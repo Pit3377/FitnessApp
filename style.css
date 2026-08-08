@@ -788,11 +788,9 @@ button:hover{
 .statistic-bar {
     display: block;
     height: 100%;
-    width: 0;
-    max-width: 100%;
-    background: #2e7d32;
+    width: 50% !important;
+    background: red !important;
     border-radius: 20px;
-    transition: width 0.4s ease;
 }
 
 .statistic-percent {
