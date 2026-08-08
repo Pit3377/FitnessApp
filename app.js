@@ -634,9 +634,7 @@ function saveDailyStatistic(date) {
 function renderStatistics() {
 
     const container =
-        document.getElementById(
-            "trainingStatistics"
-        );
+        document.getElementById("trainingStatistics");
 
     if (!container) {
         return;
@@ -645,8 +643,7 @@ function renderStatistics() {
     const statistics =
         loadStatistics();
 
-    const today =
-        new Date();
+    const today = new Date();
 
     const dayNames = [
         "So",
@@ -660,7 +657,6 @@ function renderStatistics() {
 
     let html = "";
 
-    // Montag bis Sonntag
     const currentDay =
         today.getDay();
 
@@ -669,11 +665,7 @@ function renderStatistics() {
             ? -6
             : 1 - currentDay;
 
-    for (
-        let i = 0;
-        i < 7;
-        i++
-    ) {
+    for (let i = 0; i < 7; i++) {
 
         const date =
             new Date(today);
@@ -689,17 +681,13 @@ function renderStatistics() {
                 .split("T")[0];
 
         const dayName =
-            dayNames[
-                date.getDay()
-            ];
+            dayNames[date.getDay()];
 
-        const percent =
-            statistics[dateKey] !== undefined
-                ? statistics[dateKey]
-                : 0;
+        const testValues = [20, 40, 60, 80, 100, 30, 70];
+
+        const percent = testValues[i];
 
         html += `
-
             <div class="statistic-row">
 
                 <div class="statistic-day">
@@ -710,7 +698,7 @@ function renderStatistics() {
 
                     <div
                         class="statistic-bar"
-                        style="--stat-width:${percent}%">
+                        data-percent="${percent}">
                     </div>
 
                 </div>
@@ -720,11 +708,30 @@ function renderStatistics() {
                 </div>
 
             </div>
-
         `;
     }
 
     container.innerHTML = html;
+
+    // --------------------------------------------------
+    // Balken nach dem Einfügen direkt setzen
+    // --------------------------------------------------
+
+    const bars =
+        container.querySelectorAll(
+            ".statistic-bar"
+        );
+
+    bars.forEach(bar => {
+
+        const percent =
+            Number(
+                bar.dataset.percent
+            ) || 0;
+
+        bar.style.width =
+            percent + "%";
+    });
 }
 
 // ======================================================
