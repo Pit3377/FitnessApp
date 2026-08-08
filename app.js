@@ -683,9 +683,10 @@ function renderStatistics() {
         const dayName =
             dayNames[date.getDay()];
 
-        const testValues = [20, 40, 60, 80, 100, 30, 70];
-
-        const percent = testValues[i];
+        const percent =
+            statistics[dateKey] !== undefined
+                ? Number(statistics[dateKey])
+                : 0;
 
         html += `
             <div class="statistic-row">
@@ -711,14 +712,22 @@ function renderStatistics() {
         `;
     }
 
+    // Statistik in die Seite einsetzen
     container.innerHTML = html;
 
-    const testBar =
-    container.querySelector(".statistic-bar");
+    // Balken entsprechend der Prozentwerte setzen
+    const bars =
+        container.querySelectorAll(".statistic-bar");
 
-    if (testBar) {
-    testBar.style.width = "30%";
-    testBar.style.background = "red";
+    bars.forEach(bar => {
+
+        const percent =
+            Number(bar.dataset.percent) || 0;
+
+        bar.style.width =
+            percent + "%";
+
+    });
 }
 
     // --------------------------------------------------
