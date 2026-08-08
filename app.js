@@ -14,6 +14,8 @@ console.log("Die App.js wurde erfolgreich geladen!");
 
 const STORAGE_KEY = "fitnessAppExercises";
 const THEME_KEY = "fitnessTheme";
+const DATE_KEY = "fitnessAppLastDate";
+const STATS_KEY = "fitnessAppStatistics";
 
 // ======================================================
 // Globale Variablen
@@ -35,6 +37,8 @@ function init() {
     loadTheme();
 
     loadExercises();
+
+    checkNewDay();
 
     renderExercises();
 
@@ -236,6 +240,39 @@ function closeModal() {
 // ======================================================
 // Dashboard
 // ======================================================
+
+function checkNewDay() {
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const lastDate = localStorage.getItem(DATE_KEY);
+
+    // Erster Start der App
+    if (!lastDate) {
+
+        localStorage.setItem(DATE_KEY, today);
+
+        return;
+    }
+
+    // Neuer Tag
+    if (lastDate !== today) {
+
+        // Alle Übungen wieder auf "offen" setzen
+        exercises.forEach(exercise => {
+
+            exercise.done = false;
+
+        });
+
+        saveExercises();
+
+        // Neues Datum speichern
+        localStorage.setItem(DATE_KEY, today);
+
+    }
+
+}
 
 function updateDashboard() {
 
