@@ -786,8 +786,10 @@ button:hover{
 }
 
 .statistic-bar {
+    display: block;
     height: 100%;
-    width: var(--stat-width, 0%);
+    width: 0;
+    max-width: 100%;
     background: #2e7d32;
     border-radius: 20px;
     transition: width 0.4s ease;
