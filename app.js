@@ -710,7 +710,7 @@ function renderStatistics() {
 
                     <div
                         class="statistic-bar"
-                        style="width:${percent}%">
+                        style="--stat-width:${percent}%">
                     </div>
 
                 </div>
