@@ -759,26 +759,27 @@ button:hover{
    Trainingsstatistik
    ====================================================== */
 
-.statistics-card h2 {
-    margin-bottom: 18px;
+.statistics-card {
+    overflow: hidden;
 }
 
 .statistic-row {
     display: flex;
     align-items: center;
+    width: 100%;
     gap: 10px;
     margin-bottom: 10px;
 }
 
 .statistic-day {
-    width: 28px;
-    flex-shrink: 0;
-    font-weight: bold;
+    flex: 0 0 30px;
     color: rgba(47, 45, 45, 0.61);
+    font-weight: bold;
 }
 
 .statistic-bar-container {
-    flex: 1;
+    position: relative;
+    flex: 1 1 auto;
     height: 18px;
     background: rgba(47, 45, 45, 0.61);
     border-radius: 20px;
@@ -786,23 +787,19 @@ button:hover{
 }
 
 .statistic-bar {
-    display: block;
-    height: 100%;
-    width: 50% !important;
-    background: red !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 18px;
+    width: 0;
+    background: #2e7d32;
     border-radius: 20px;
+    transition: width 0.4s ease;
 }
 
 .statistic-percent {
-    width: 45px;
+    flex: 0 0 50px;
     text-align: right;
-    font-weight: bold;
     color: rgba(47, 45, 45, 0.61);
-}
-
-/* Dark Mode */
-
-body.dark .statistic-day,
-body.dark .statistic-percent {
-    color: #f2f2f2;
+    font-weight: bold;
 }
