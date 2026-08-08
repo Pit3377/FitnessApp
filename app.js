@@ -748,6 +748,7 @@ function renderStatistics() {
 
     });
 
+    console.log("STATISTIK-BALKEN:", [...bars].map(bar => bar.dataset.percent));
 
 // ======================================================
 // Dashboard
