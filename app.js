@@ -725,12 +725,10 @@ function renderStatistics() {
     bars.forEach(bar => {
 
         const percent =
-            Number(
-                bar.dataset.percent
-            ) || 0;
+            Number(bar.dataset.percent) || 0;
 
-        bar.style.width =
-            percent + "%";
+        bar.style.width = percent + "%";
+
     });
 }
 
