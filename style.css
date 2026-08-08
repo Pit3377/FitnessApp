@@ -754,3 +754,55 @@ button:hover{
     filter:brightness(1.08);
 
 }
+
+/* ======================================================
+   Trainingsstatistik
+   ====================================================== */
+
+.statistics-card h2 {
+    margin-bottom: 18px;
+}
+
+.statistic-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.statistic-day {
+    width: 28px;
+    flex-shrink: 0;
+    font-weight: bold;
+    color: rgba(47, 45, 45, 0.61);
+}
+
+.statistic-bar-container {
+    flex: 1;
+    height: 18px;
+    background: rgba(47, 45, 45, 0.61);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.statistic-bar {
+    height: 100%;
+    width: 0%;
+    background: #2e7d32;
+    border-radius: 20px;
+    transition: width 0.4s ease;
+}
+
+.statistic-percent {
+    width: 45px;
+    text-align: right;
+    font-weight: bold;
+    color: rgba(47, 45, 45, 0.61);
+}
+
+/* Dark Mode */
+
+body.dark .statistic-day,
+body.dark .statistic-percent {
+    color: #f2f2f2;
+}
