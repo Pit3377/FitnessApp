@@ -713,6 +713,14 @@ function renderStatistics() {
 
     container.innerHTML = html;
 
+    const testBar =
+    container.querySelector(".statistic-bar");
+
+    if (testBar) {
+    testBar.style.width = "30%";
+    testBar.style.background = "red";
+}
+
     // --------------------------------------------------
     // Balken nach dem Einfügen direkt setzen
     // --------------------------------------------------
