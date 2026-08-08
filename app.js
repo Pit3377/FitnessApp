@@ -2,8 +2,8 @@ console.log("Die App.js wurde erfolgreich geladen!");
 
 // ======================================================
 // Fitness App
-// Version 2.0
-// Teil 1A – Grundstruktur
+// Version 2.1
+// Bildspeicherung über IndexedDB
 // ======================================================
 
 "use strict";
@@ -17,12 +17,17 @@ const THEME_KEY = "fitnessTheme";
 const DATE_KEY = "fitnessAppLastDate";
 const STATS_KEY = "fitnessAppStatistics";
 
+const DB_NAME = "fitnessAppDatabase";
+const DB_VERSION = 1;
+const IMAGE_STORE = "images";
+
 // ======================================================
 // Globale Variablen
 // ======================================================
 
 let exercises = [];
 let editIndex = null;
+let db = null;
 
 // ======================================================
 // Start der App
@@ -30,25 +35,27 @@ let editIndex = null;
 
 document.addEventListener("DOMContentLoaded", init);
 
-function init() {
+async function init() {
 
     showToday();
 
     loadTheme();
 
+    await initDatabase();
+
     loadExercises();
 
     checkNewDay();
 
-    renderExercises();
+    await migrateOldImages();
+
+    await renderExercises();
 
     bindEvents();
-
 }
 
 // ======================================================
 // Hilfsfunktion
-// Liefert ein HTML-Element oder wirft einen Fehler
 // ======================================================
 
 function $(id) {
@@ -60,7 +67,6 @@ function $(id) {
     }
 
     return element;
-
 }
 
 // ======================================================
@@ -78,7 +84,6 @@ function showToday() {
             month: "2-digit",
             year: "numeric"
         });
-
 }
 
 // ======================================================
@@ -93,7 +98,6 @@ function toggleTheme() {
         THEME_KEY,
         document.body.classList.contains("dark")
     );
-
 }
 
 function loadTheme() {
@@ -102,16 +106,248 @@ function loadTheme() {
         localStorage.getItem(THEME_KEY) === "true";
 
     document.body.classList.toggle("dark", darkMode);
-
 }
 
 // ======================================================
-// LocalStorage
+// IndexedDB
+// ======================================================
+
+function initDatabase() {
+
+    return new Promise((resolve, reject) => {
+
+        const request =
+            indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = function (event) {
+
+            const database = event.target.result;
+
+            if (!database.objectStoreNames.contains(IMAGE_STORE)) {
+
+                database.createObjectStore(
+                    IMAGE_STORE,
+                    { keyPath: "id" }
+                );
+
+            }
+        };
+
+        request.onsuccess = function (event) {
+
+            db = event.target.result;
+
+            console.log("IndexedDB erfolgreich geöffnet.");
+
+            resolve();
+        };
+
+        request.onerror = function () {
+
+            console.error(
+                "IndexedDB Fehler:",
+                request.error
+            );
+
+            reject(request.error);
+        };
+    });
+}
+
+// ======================================================
+// Bild in IndexedDB speichern
+// ======================================================
+
+function saveImage(imageId, imageData) {
+
+    return new Promise((resolve, reject) => {
+
+        if (!db) {
+
+            reject(
+                new Error("IndexedDB ist nicht geöffnet.")
+            );
+
+            return;
+        }
+
+        const transaction =
+            db.transaction(
+                IMAGE_STORE,
+                "readwrite"
+            );
+
+        const store =
+            transaction.objectStore(IMAGE_STORE);
+
+        store.put({
+            id: imageId,
+            data: imageData
+        });
+
+        transaction.oncomplete = function () {
+
+            resolve();
+        };
+
+        transaction.onerror = function () {
+
+            reject(transaction.error);
+        };
+    });
+}
+
+// ======================================================
+// Bild aus IndexedDB laden
+// ======================================================
+
+function loadImage(imageId) {
+
+    return new Promise((resolve, reject) => {
+
+        if (!db) {
+
+            resolve("");
+
+            return;
+        }
+
+        const transaction =
+            db.transaction(
+                IMAGE_STORE,
+                "readonly"
+            );
+
+        const store =
+            transaction.objectStore(IMAGE_STORE);
+
+        const request =
+            store.get(imageId);
+
+        request.onsuccess = function () {
+
+            if (request.result) {
+
+                resolve(request.result.data);
+
+            } else {
+
+                resolve("");
+            }
+        };
+
+        request.onerror = function () {
+
+            reject(request.error);
+        };
+    });
+}
+
+// ======================================================
+// Bild aus IndexedDB löschen
+// ======================================================
+
+function deleteImage(imageId) {
+
+    return new Promise((resolve, reject) => {
+
+        if (!db || !imageId) {
+
+            resolve();
+
+            return;
+        }
+
+        const transaction =
+            db.transaction(
+                IMAGE_STORE,
+                "readwrite"
+            );
+
+        const store =
+            transaction.objectStore(IMAGE_STORE);
+
+        store.delete(imageId);
+
+        transaction.oncomplete = function () {
+
+            resolve();
+        };
+
+        transaction.onerror = function () {
+
+            reject(transaction.error);
+        };
+    });
+}
+
+// ======================================================
+// Alte Base64-Bilder übernehmen
+// ======================================================
+
+async function migrateOldImages() {
+
+    let changed = false;
+
+    for (const exercise of exercises) {
+
+        // Bereits auf IndexedDB umgestellt
+        if (exercise.imageId) {
+            continue;
+        }
+
+        // Altes Base64-Bild vorhanden
+        if (
+            exercise.image &&
+            exercise.image.startsWith("data:image/")
+        ) {
+
+            const imageId =
+                "image_" +
+                exercise.id;
+
+            try {
+
+                await saveImage(
+                    imageId,
+                    exercise.image
+                );
+
+                exercise.imageId = imageId;
+
+                // Altes großes Base64-Feld entfernen
+                exercise.image = "";
+
+                changed = true;
+
+                console.log(
+                    "Altes Bild übernommen:",
+                    exercise.name
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Fehler bei Bildübernahme:",
+                    error
+                );
+            }
+        }
+    }
+
+    if (changed) {
+
+        saveExercises();
+    }
+}
+
+// ======================================================
+// LocalStorage – Übungsdaten
 // ======================================================
 
 function saveExercises() {
 
-console.log("Speichere", exercises);
+    console.log("Speichere", exercises);
 
     try {
 
@@ -122,36 +358,44 @@ console.log("Speichere", exercises);
 
     } catch (error) {
 
-        console.error("Fehler beim Speichern:", error);
+        console.error(
+            "Fehler beim Speichern:",
+            error
+        );
 
+        alert(
+            "Die Übungen konnten nicht gespeichert werden."
+        );
     }
-
 }
 
 function loadExercises() {
 
-console.log("Geladen", exercises);
+    console.log("Lade Übungen");
 
     try {
 
-        const data = localStorage.getItem(STORAGE_KEY);
+        const data =
+            localStorage.getItem(STORAGE_KEY);
 
         exercises = data
             ? JSON.parse(data)
             : [];
 
         if (!Array.isArray(exercises)) {
+
             exercises = [];
         }
 
     } catch (error) {
 
-        console.error("Fehler beim Laden:", error);
+        console.error(
+            "Fehler beim Laden:",
+            error
+        );
 
         exercises = [];
-
     }
-
 }
 
 // ======================================================
@@ -171,50 +415,54 @@ function clearForm() {
     $("rest").value = "";
 
     $("image").value = "";
-
 }
 
 function resetEditMode() {
 
     editIndex = null;
 
-    $("modalTitle").textContent = "Neue Übung";
-
+    $("modalTitle").textContent =
+        "Neue Übung";
 }
 
 function createId() {
 
     return Date.now();
-
 }
-// ======================================================
-// Teil 1B
-// Events, Modal, Dashboard und Render-Grundgerüst
-// ======================================================
-
 
 // ======================================================
-// Events registrieren
+// Events
 // ======================================================
 
 function bindEvents() {
 
-    $("themeBtn").addEventListener("click", toggleTheme);
+    $("themeBtn").addEventListener(
+        "click",
+        toggleTheme
+    );
 
-    $("newExerciseBtn").addEventListener("click", () => {
+    $("newExerciseBtn").addEventListener(
+        "click",
+        () => {
 
-        resetEditMode();
-        clearForm();
-        openModal();
+            resetEditMode();
 
-    });
+            clearForm();
 
-    $("closeModal").addEventListener("click", closeModal);
+            openModal();
+        }
+    );
 
-    $("saveExercise").addEventListener("click", saveExercise);
+    $("closeModal").addEventListener(
+        "click",
+        closeModal
+    );
 
+    $("saveExercise").addEventListener(
+        "click",
+        saveExercise
+    );
 }
-
 
 // ======================================================
 // Modal
@@ -222,8 +470,9 @@ function bindEvents() {
 
 function openModal() {
 
-    $("exerciseModal").classList.remove("hidden");
-
+    $("exerciseModal")
+        .classList
+        .remove("hidden");
 }
 
 function closeModal() {
@@ -232,25 +481,32 @@ function closeModal() {
 
     clearForm();
 
-    $("exerciseModal").classList.add("hidden");
-
+    $("exerciseModal")
+        .classList
+        .add("hidden");
 }
 
-
 // ======================================================
-// Dashboard
+// Tageswechsel
 // ======================================================
 
 function checkNewDay() {
 
-    const today = new Date().toISOString().split("T")[0];
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
 
-    const lastDate = localStorage.getItem(DATE_KEY);
+    const lastDate =
+        localStorage.getItem(DATE_KEY);
 
-    // Erster Start der App
+    // Erster Start
     if (!lastDate) {
 
-        localStorage.setItem(DATE_KEY, today);
+        localStorage.setItem(
+            DATE_KEY,
+            today
+        );
 
         return;
     }
@@ -258,69 +514,77 @@ function checkNewDay() {
     // Neuer Tag
     if (lastDate !== today) {
 
-        // Alle Übungen wieder auf "offen" setzen
-        exercises.forEach(exercise => {
+        exercises.forEach(
+            exercise => {
 
-            exercise.done = false;
-
-        });
+                exercise.done = false;
+            }
+        );
 
         saveExercises();
 
-        // Neues Datum speichern
-        localStorage.setItem(DATE_KEY, today);
-
+        localStorage.setItem(
+            DATE_KEY,
+            today
+        );
     }
-
 }
+
+// ======================================================
+// Dashboard
+// ======================================================
 
 function updateDashboard() {
 
-    const total = exercises.length;
+    const total =
+        exercises.length;
 
-    const done = exercises.filter(e => e.done).length;
+    const done =
+        exercises.filter(
+            e => e.done
+        ).length;
 
-    $("exerciseCount").textContent = total;
+    $("exerciseCount").textContent =
+        total;
 
-    $("doneCount").textContent = done;
+    $("doneCount").textContent =
+        done;
 
     const percent =
         total === 0
             ? 0
-            : Math.round(done / total * 100);
+            : Math.round(
+                done / total * 100
+            );
 
-    $("progressBar").style.width = percent + "%";
+    $("progressBar")
+        .style
+        .width =
+        percent + "%";
 
     $("progressText").textContent =
         percent + " % erledigt";
 
     updateStreak();
-
 }
 
-
 // ======================================================
-// Trainingsserie (Streak)
+// Trainingsserie
 // ======================================================
 
 function updateStreak() {
 
-    // Platzhalter
-    // Im späteren Teil wird daraus
-    // eine echte Tagesserie.
-
     $("streak").textContent = "0";
-
 }
-
 
 // ======================================================
 // Übungen darstellen
 // ======================================================
 
-function renderExercises() {
+async function renderExercises() {
 
-    const list = $("exerciseList");
+    const list =
+        $("exerciseList");
 
     list.innerHTML = "";
 
@@ -332,100 +596,160 @@ function renderExercises() {
         updateDashboard();
 
         return;
-
     }
 
     let html = "";
 
-    exercises.forEach((exercise, index) => {
+    for (
+        let index = 0;
+        index < exercises.length;
+        index++
+    ) {
 
-        html += createExerciseCard(exercise, index);
-
-    });
+        html +=
+            await createExerciseCard(
+                exercises[index],
+                index
+            );
+    }
 
     list.innerHTML = html;
 
     updateDashboard();
-
 }
-
 
 // ======================================================
 // Karte einer Übung erzeugen
 // ======================================================
 
-function createExerciseCard(exercise, index) {
+async function createExerciseCard(
+    exercise,
+    index
+) {
 
-    const image =
-        exercise.image || "images/placeholder.png";
+    let image =
+        "images/placeholder.png";
+
+    // Neues IndexedDB-Bild laden
+    if (exercise.imageId) {
+
+        try {
+
+            const storedImage =
+                await loadImage(
+                    exercise.imageId
+                );
+
+            if (storedImage) {
+
+                image = storedImage;
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Bild konnte nicht geladen werden:",
+                error
+            );
+        }
+    }
+
+    // Übergangsweise alte Bilder unterstützen
+    else if (exercise.image) {
+
+        image = exercise.image;
+    }
 
     return `
 
-<div class="exercise-card ${exercise.done ? "completed" : ""}">
+        <div class="exercise-card">
 
-    <img
-        src="${image}"
-        alt="${exercise.name}"
-        onerror="this.src='images/placeholder.png'">
+            <img
+                src="${image}"
+                alt="${escapeHtml(exercise.name)}"
+                onerror="this.src='images/placeholder.png'">
 
-    <div class="exercise-body">
+            <div class="exercise-body">
 
-        <h3>${escapeHtml(exercise.name)}</h3>
+                <h3>
+                    ${escapeHtml(exercise.name)}
+                </h3>
 
-        <span class="badge">
+                <span class="badge">
 
-            ${escapeHtml(exercise.category)}
+                    ${escapeHtml(exercise.category)}
 
-        </span>
+                </span>
 
-        <p>
+                <p>
 
-            ${escapeHtml(exercise.description)}
+                    ${escapeHtml(exercise.description)}
 
-        </p>
+                </p>
 
-        <div class="exercise-info">
+                <div class="exercise-info">
 
-            <p>💪 ${exercise.sets} Sätze</p>
+                    <p>
+                        💪 ${exercise.sets} Sätze
+                    </p>
 
-            <p>🔁 ${exercise.reps} Wiederholungen</p>
+                    <p>
+                        🔁 ${exercise.reps} Wiederholungen
+                    </p>
 
-            <p>🏋️ ${exercise.weight} kg</p>
+                    <p>
+                        🏋️ ${exercise.weight} kg
+                    </p>
 
-            <p>⏱️ ${exercise.time} Sekunden</p>
+                    <p>
+                        ⏱️ ${exercise.time} Sekunden
+                    </p>
 
-            <p>☕ ${exercise.rest} Sekunden Pause</p>
+                    <p>
+                        ☕ ${exercise.rest} Sekunden Pause
+                    </p>
+
+                </div>
+
+                <div class="exercise-buttons">
+
+                    <button
+                        onclick="toggleDone(${index})">
+
+                        ${
+                            exercise.done
+                                ? "✅ Erledigt"
+                                : "☑️ Offen"
+                        }
+
+                    </button>
+
+                    <div class="button-right">
+
+                        <button
+                            onclick="editExercise(${index})">
+
+                            ✏️ Bearbeiten
+
+                        </button>
+
+                        <button
+                            class="danger"
+                            onclick="deleteExercise(${index})">
+
+                            🗑️ Löschen
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
-
-		<div class="exercise-buttons">
-
-			<button onclick="toggleDone(${index})">
-				${exercise.done ? "✅ Erledigt" : "☑️ Offen"}
-			</button>
-
-			<div class="button-right">
-
-				<button onclick="editExercise(${index})">
-					✏️ Bearbeiten
-				</button>
-
-				<button class="danger" onclick="deleteExercise(${index})">
-					🗑️ Löschen
-				</button>
-
-			</div>
-
-		</div>
-
-    </div>
-
-</div>
-
-`;
-
+    `;
 }
-
 
 // ======================================================
 // HTML absichern
@@ -433,26 +757,41 @@ function createExerciseCard(exercise, index) {
 
 function escapeHtml(text) {
 
-    if (text === null || text === undefined) {
+    if (
+        text === null ||
+        text === undefined
+    ) {
 
         return "";
-
     }
 
     return String(text)
 
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(
+            /&/g,
+            "&amp;"
+        )
 
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
-// ======================================================
-// Teil 2
-// Übungen speichern, bearbeiten und löschen
-// ======================================================
-
 
 // ======================================================
 // Bild lesen
@@ -460,28 +799,31 @@ function escapeHtml(text) {
 
 function readImage(file) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        if (!file) {
+            if (!file) {
 
-            resolve("");
+                resolve("");
 
-            return;
+                return;
+            }
 
+            const reader =
+                new FileReader();
+
+            reader.onload =
+                () => resolve(
+                    reader.result
+                );
+
+            reader.onerror =
+                reject;
+
+            reader.readAsDataURL(file);
         }
-
-        const reader = new FileReader();
-
-        reader.onload = () => resolve(reader.result);
-
-        reader.onerror = reject;
-
-        reader.readAsDataURL(file);
-
-    });
-
+    );
 }
-
 
 // ======================================================
 // Übung speichern
@@ -489,57 +831,130 @@ function readImage(file) {
 
 async function saveExercise() {
 
-    const file = $("image").files[0];
+    const file =
+        $("image").files[0];
+
+    const oldExercise =
+        editIndex !== null
+            ? exercises[editIndex]
+            : null;
 
     const exercise = {
 
-        id: editIndex === null
-            ? createId()
-            : exercises[editIndex].id,
+        id:
+            editIndex === null
+                ? createId()
+                : oldExercise.id,
 
-        name: $("name").value.trim(),
+        name:
+            $("name")
+                .value
+                .trim(),
 
-        description: $("description").value.trim(),
+        description:
+            $("description")
+                .value
+                .trim(),
 
-        category: $("category").value,
+        category:
+            $("category").value,
 
-        sets: Number($("sets").value) || 0,
+        sets:
+            Number(
+                $("sets").value
+            ) || 0,
 
-        reps: Number($("reps").value) || 0,
+        reps:
+            Number(
+                $("reps").value
+            ) || 0,
 
-        weight: Number($("weight").value) || 0,
+        weight:
+            Number(
+                $("weight").value
+            ) || 0,
 
-        time: Number($("time").value) || 0,
+        time:
+            Number(
+                $("time").value
+            ) || 0,
 
-        rest: Number($("rest").value) || 0,
+        rest:
+            Number(
+                $("rest").value
+            ) || 0,
 
-        done: editIndex === null
-            ? false
-            : exercises[editIndex].done,
+        done:
+            editIndex === null
+                ? false
+                : oldExercise.done,
 
+        imageId:
+            oldExercise
+                ? oldExercise.imageId || ""
+                : "",
+
+        // Kein Base64 mehr in localStorage
         image: ""
-
     };
 
     if (exercise.name === "") {
 
-        alert("Bitte einen Übungsnamen eingeben.");
+        alert(
+            "Bitte einen Übungsnamen eingeben."
+        );
 
         $("name").focus();
 
         return;
-
     }
+
+    // ==================================================
+    // Neues Bild speichern
+    // ==================================================
 
     if (file) {
 
-        exercise.image = await readImage(file);
+        try {
 
-    } else if (editIndex !== null) {
+            const imageId =
+                exercise.imageId ||
+                "image_" + exercise.id;
 
-        exercise.image = exercises[editIndex].image;
+            const imageData =
+                await readImage(file);
 
+            await saveImage(
+                imageId,
+                imageData
+            );
+
+            exercise.imageId =
+                imageId;
+
+            console.log(
+                "Bild gespeichert:",
+                imageId
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Fehler beim Speichern des Bildes:",
+                error
+            );
+
+            alert(
+                "Das Bild konnte nicht gespeichert werden."
+            );
+
+            return;
+        }
     }
+
+    // ==================================================
+    // Übung speichern
+    // ==================================================
 
     if (editIndex === null) {
 
@@ -547,29 +962,25 @@ async function saveExercise() {
 
     } else {
 
-        exercises[editIndex] = exercise;
-
+        exercises[editIndex] =
+            exercise;
     }
 
     finishSave();
-
 }
-
 
 // ======================================================
 // Speichern abschließen
 // ======================================================
 
-function finishSave() {
+async function finishSave() {
 
     saveExercises();
 
-    renderExercises();
+    await renderExercises();
 
     closeModal();
-
 }
-
 
 // ======================================================
 // Bearbeiten
@@ -577,90 +988,134 @@ function finishSave() {
 
 function editExercise(index) {
 
-    const exercise = exercises[index];
+    const exercise =
+        exercises[index];
 
     editIndex = index;
 
-    $("modalTitle").textContent = "Übung bearbeiten";
+    $("modalTitle").textContent =
+        "Übung bearbeiten";
 
-    $("name").value = exercise.name;
+    $("name").value =
+        exercise.name;
 
-    $("description").value = exercise.description;
+    $("description").value =
+        exercise.description;
 
-    $("category").value = exercise.category;
+    $("category").value =
+        exercise.category;
 
-    $("sets").value = exercise.sets;
+    $("sets").value =
+        exercise.sets;
 
-    $("reps").value = exercise.reps;
+    $("reps").value =
+        exercise.reps;
 
-    $("weight").value = exercise.weight;
+    $("weight").value =
+        exercise.weight;
 
-    $("time").value = exercise.time;
+    $("time").value =
+        exercise.time;
 
-    $("rest").value = exercise.rest;
+    $("rest").value =
+        exercise.rest;
 
     $("image").value = "";
 
     openModal();
-
 }
-
 
 // ======================================================
 // Erledigt / Offen
 // ======================================================
 
-function toggleDone(index) {
+async function toggleDone(index) {
 
-    exercises[index].done = !exercises[index].done;
+    exercises[index].done =
+        !exercises[index].done;
 
     saveExercises();
 
-    renderExercises();
-
+    await renderExercises();
 }
-
 
 // ======================================================
 // Löschen
 // ======================================================
 
-function deleteExercise(index) {
+async function deleteExercise(index) {
 
-    if (!confirm("Übung wirklich löschen?")) {
+    if (
+        !confirm(
+            "Übung wirklich löschen?"
+        )
+    ) {
 
         return;
-
     }
 
-    exercises.splice(index, 1);
+    const exercise =
+        exercises[index];
+
+    // Zugehöriges Bild löschen
+    if (exercise.imageId) {
+
+        try {
+
+            await deleteImage(
+                exercise.imageId
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Fehler beim Löschen des Bildes:",
+                error
+            );
+        }
+    }
+
+    exercises.splice(
+        index,
+        1
+    );
 
     saveExercises();
 
-    renderExercises();
-
+    await renderExercises();
 }
+
 // ======================================================
 // Service Worker registrieren
 // ======================================================
 
-if ("serviceWorker" in navigator) {
+if (
+    "serviceWorker" in navigator
+) {
 
-    window.addEventListener("load", async () => {
+    window.addEventListener(
+        "load",
+        async () => {
 
-        try {
+            try {
 
-            const registration =
-                await navigator.serviceWorker.register("./sw.js");
+                const registration =
+                    await navigator.serviceWorker.register(
+                        "./sw.js"
+                    );
 
-            console.log("Service Worker registriert.", registration);
+                console.log(
+                    "Service Worker registriert.",
+                    registration
+                );
 
-        } catch (error) {
+            } catch (error) {
 
-            console.error("Service Worker Fehler:", error);
-
+                console.error(
+                    "Service Worker Fehler:",
+                    error
+                );
+            }
         }
-
-    });
-
+    );
 }
