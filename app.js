@@ -747,7 +747,7 @@ function renderStatistics() {
         bar.style.width = percent + "%";
 
     });
-}
+
 
 // ======================================================
 // Dashboard
