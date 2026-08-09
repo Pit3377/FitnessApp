@@ -251,49 +251,32 @@ main{
 
 }
 
-.stats{
-
-    display:flex;
-
-    justify-content:space-around;
-
-    gap:15px;
-
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
 }
 
-.stat{
-
-    flex:1;
-
-    background:rgba(255,255,255,.25);
-
-    border-radius:15px;
-
-    padding:15px;
-
-    text-align:center;
-
+.stat {
+    flex: 0 1 150px;
+    background: rgba(255,255,255,.25);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
 }
 
-.stat span{
-
-    display:block;
-
-    font-size:30px;
-
-    font-weight:bold;
-
-    color:rgba(47, 45, 45, 0.61);
-
+.stat span {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: rgba(47, 45, 45, 0.61);
 }
 
-.stat small{
-
-    color:rgba(47, 45, 45, 0.61);
-
-    font-size:14px;
-
+.stat small {
+    color: rgba(47, 45, 45, 0.61);
+    font-size: 13px;
 }
+
 
 
 /* ======================================================
@@ -667,10 +650,14 @@ body.dark .badge{
 
     }
 
-    .stats{
+    .stats {
+        flex-direction: row;
+        gap: 8px;
+    }
 
-        flex-direction:column;
-
+    .stat {
+        flex: 1;
+        padding: 9px 5px;
     }
 
     .sectionHeader{
