@@ -51,6 +51,8 @@ async function init() {
 
     await renderExercises();
 
+    renderStatistics();
+
     bindEvents();
 }
 
@@ -699,7 +701,7 @@ function renderStatistics() {
 
                     <div
                         class="statistic-bar"
-                        data-percent="${percent}">
+                        style="width: ${percent}%;">
                     </div>
 
                 </div>
@@ -715,19 +717,6 @@ function renderStatistics() {
     // Statistik in die Seite einsetzen
     container.innerHTML = html;
 
-    // Balken entsprechend der Prozentwerte setzen
-    const bars =
-        container.querySelectorAll(".statistic-bar");
-
-    bars.forEach(bar => {
-
-        const percent =
-            Number(bar.dataset.percent) || 0;
-
-        bar.style.width =
-            percent + "%";
-
-    });
 }
 
     // --------------------------------------------------
