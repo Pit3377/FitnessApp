@@ -800,6 +800,6 @@ button:hover{
 .statistic-percent {
     flex: 0 0 50px;
     text-align: right;
-    color: rgba(47, 45, 45, 0.61);
+    color: rgba(200, 231, 29, 0.61);
     font-weight: bold;
 }
